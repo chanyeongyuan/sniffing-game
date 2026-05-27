@@ -219,6 +219,8 @@ const breezeAgent = {
   label: "Breeze Agent"
 };
 
+const API_BASE_URL = resolveApiBaseUrl();
+const SESSION_ID = getOrCreateSessionId();
 const salesBlocks = new Set(
   [
     [4, 4],
@@ -744,7 +746,7 @@ function saveCheckpointAnswer() {
 
   const model = calculateJourneyModel();
   state.speaker = "Growth Gabby";
-  state.message = `${savePoint.label} saved. Lead score is now ${model.leadScore}.`;
+  state.message = `${savePoint.label} saved locally. Syncing to Postgres. Lead score is now ${model.leadScore}.`;
   state.events.unshift({
     title: savePoint.label,
     body: isNew
@@ -754,6 +756,66 @@ function saveCheckpointAnswer() {
 
   if (state.routeActive) {
     computeBestRoute(false);
+  }
+
+  updateUI();
+  persistSavePointAnswer(savePoint, answer, model);
+}
+
+async function persistSavePointAnswer(savePoint, answer, model) {
+  const payload = {
+    sessionId: SESSION_ID,
+    savePointId: savePoint.id,
+    savePointLabel: savePoint.label,
+    question: savePoint.question,
+    answer,
+    mode: state.mode,
+    leadScore: model.leadScore,
+    projectedRevenue: model.projectedRevenue,
+    conversionRate: model.conversionRate,
+    dealScore: state.sales.dealScore,
+    context: {
+      collectedTouchpoints: [...state.collected],
+      saveAnswers: { ...state.saveAnswers },
+      sales: {
+        sequences: [...state.sales.sequences],
+        stages: [...state.sales.stages],
+        dealScore: state.sales.dealScore,
+        dealHealth: state.sales.dealHealth,
+        dealProgress: state.sales.dealProgress,
+        agentUsed: state.sales.agentUsed
+      }
+    }
+  };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/save-point-answers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    state.speaker = "Sniffing Database";
+    state.message = `${savePoint.label} stored in Postgres for session ${SESSION_ID.slice(-6)}.`;
+    state.events.unshift({
+      title: "Postgres Saved",
+      body: `${savePoint.label} answer stored with record #${result.id}.`
+    });
+  } catch (error) {
+    state.speaker = "Sniffing Database";
+    state.message = `${savePoint.label} stayed in this browser run, but the Postgres sync failed. Check the Render API connection.`;
+    state.events.unshift({
+      title: "Database Sync Failed",
+      body: `${savePoint.label} could not reach ${API_BASE_URL}.`
+    });
+    console.warn("Save point sync failed", error);
   }
 
   updateUI();
@@ -1051,6 +1113,42 @@ function key(x, y) {
 function fromKey(value) {
   const [x, y] = value.split(",").map(Number);
   return { x, y };
+}
+
+function resolveApiBaseUrl() {
+  const query = new URLSearchParams(window.location.search);
+  const configured =
+    query.get("api") ||
+    window.SNIFFING_API_BASE_URL ||
+    document.querySelector('meta[name="sniffing-api-base-url"]')?.content;
+
+  if (configured) {
+    return configured.replace(/\/$/, "");
+  }
+
+  if (window.location.protocol === "file:" || ["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+    return "http://localhost:3000";
+  }
+
+  return "https://sniffing-game-api.onrender.com";
+}
+
+function getOrCreateSessionId() {
+  const keyName = "sniffing.sessionId";
+
+  try {
+    const existing = window.localStorage.getItem(keyName);
+    if (existing) return existing;
+    const randomPart =
+      window.crypto && window.crypto.randomUUID
+        ? window.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const created = `sniff-${randomPart}`;
+    window.localStorage.setItem(keyName, created);
+    return created;
+  } catch (_error) {
+    return `sniff-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
 }
 
 function calculateJourneyModel() {

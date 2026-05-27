@@ -25,8 +25,16 @@ Stage 2:
 - Avoid timed deal-risk bombs. Explosions reduce deal health, subtract 10 deal-score points, and can lose the deal.
 - Collect Breeze Agent to delay bombs, summarize objections, and help close the deal.
 
+Database storage:
+- Save point answers are sent to the Render API at `https://sniffing-game-api.onrender.com`.
+- The API stores answers in Render Postgres in the `save_point_answers` table.
+- Local development defaults to `http://localhost:3000`; override with `?api=https://your-api-url`.
+- Run the backend locally with `cd server && npm install && DATABASE_URL=postgres://... npm start`.
+
 Files:
 - `index.html` contains the game shell.
 - `styles.css` contains the retro UI system.
 - `src/game.js` contains the map, movement, pathfinding, attribution model, and canvas rendering.
+- `server/index.js` contains the Express API that writes save point answers to Postgres.
 - `assets/concept.png` is the generated visual concept used as the design reference.
+- `render.yaml` provisions the static site, API, and Postgres database on Render.
