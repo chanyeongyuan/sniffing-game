@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sniffing</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="game-shell" aria-label="Sniffing game">
+      <aside class="panel left-panel" aria-label="Quest log">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <h1>Sniffing</h1>
+            <p>HubSpot Ops Lab</p>
+          </div>
+        </div>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <span id="primaryListTitle">Touchpoints</span>
+            <strong id="touchpointCount">0/5</strong>
+          </div>
+          <div id="touchpointList" class="touchpoint-list"></div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <span id="secondaryListTitle">Save Points</span>
+            <strong id="savePointCount">0/4</strong>
+          </div>
+          <div id="savePointList" class="savepoint-list"></div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <span>Pathfinder</span>
+            <strong id="routeLength">-- tiles</strong>
+          </div>
+          <div class="pathfinder-readout">
+            <p id="nextBestStep">Next best step: Email</p>
+            <div class="route-meter" aria-hidden="true">
+              <span id="routeMeterFill"></span>
+            </div>
+            <p id="routeInsight">Press Pathfind to light the conversion route.</p>
+          </div>
+        </section>
+      </aside>
+
+      <section class="stage-wrap" aria-label="Game stage">
+        <div class="stage-toolbar">
+          <button class="icon-button primary" id="pathfindButton" type="button" title="Pathfind">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 18c4 0 4-12 8-12s4 12 8 12" />
+              <path d="M4 18h4m8 0h4" />
+              <circle cx="4" cy="18" r="2" />
+              <circle cx="12" cy="6" r="2" />
+              <circle cx="20" cy="18" r="2" />
+            </svg>
+            <span>Pathfind</span>
+          </button>
+          <button class="icon-button" id="resetButton" type="button" title="Reset run">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 7v5h5" />
+              <path d="M5.5 12a7 7 0 1 0 2-5" />
+            </svg>
+            <span>Reset</span>
+          </button>
+          <button class="icon-button" id="stageButton" type="button" title="Switch stage">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 15h4l3-6h4l2-4" />
+              <path d="M14 5h5v5" />
+              <path d="M4 19h16" />
+            </svg>
+            <span>Sales Stage</span>
+          </button>
+          <button class="icon-button sales-action" id="breezeButton" type="button" title="Use Breeze Agent">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v18" />
+              <path d="M3 12h18" />
+              <path d="M6 6l12 12" />
+              <path d="M18 6L6 18" />
+            </svg>
+            <span>Breeze</span>
+          </button>
+          <div class="route-name" id="routeName">Growth Gabby's First Trail</div>
+        </div>
+
+        <canvas id="gameCanvas" width="768" height="512" aria-label="Playable map"></canvas>
+
+        <div class="dialogue-box" aria-live="polite">
+          <p id="dialogueSpeaker">Growth Gabby</p>
+          <p id="dialogueText">Sniff touchpoints, answer save point questions, and reveal the conversion route.</p>
+        </div>
+
+        <div class="touch-controls" aria-label="Touch controls">
+          <div class="dpad">
+            <button type="button" data-dir="up" aria-label="Move up"></button>
+            <button type="button" data-dir="left" aria-label="Move left"></button>
+            <button type="button" data-dir="right" aria-label="Move right"></button>
+            <button type="button" data-dir="down" aria-label="Move down"></button>
+          </div>
+          <button class="round-action" id="touchPathfindButton" type="button">P</button>
+        </div>
+      </section>
+
+      <aside class="panel right-panel" aria-label="Attribution dashboard">
+        <section class="score-card">
+          <div>
+            <span class="score-label">Revenue Credit</span>
+            <strong id="revenueTotal">$0</strong>
+          </div>
+          <div class="score-stack">
+            <span id="leadScoreTotal" class="lead-score-chip">LS 0</span>
+            <span id="dealScoreTotal" class="deal-score-chip">DS 100</span>
+            <span id="journeyStatus" class="status-chip">Exploring</span>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <span id="mathTitle">Journey Math</span>
+            <strong id="conversionRate">--%</strong>
+          </div>
+          <div id="journeyMath" class="journey-math"></div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <span id="mixTitle">Multi-Touch Mix</span>
+            <strong id="modelName">Position</strong>
+          </div>
+          <div id="creditBars" class="credit-bars"></div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <span>Journey Events</span>
+            <strong id="eventCount">0</strong>
+          </div>
+          <ol id="eventLog" class="event-log"></ol>
+        </section>
+      </aside>
+    </main>
+
+    <div class="question-modal hidden" id="questionModal" role="dialog" aria-modal="true" aria-labelledby="questionTitle">
+      <div class="question-card">
+        <div class="section-title">
+          <span id="questionTitle">Save Point</span>
+          <strong id="questionProgress">1/4</strong>
+        </div>
+        <p id="questionText" class="question-text"></p>
+        <textarea id="questionAnswer" rows="3" placeholder="Type a rough answer..."></textarea>
+        <div class="question-actions">
+          <button class="icon-button" id="questionLaterButton" type="button">Later</button>
+          <button class="icon-button primary" id="questionSaveButton" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./src/game.js"></script>
+  </body>
+</html>
