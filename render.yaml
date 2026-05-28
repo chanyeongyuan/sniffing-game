@@ -6,7 +6,7 @@ services:
     branch: main
     autoDeploy: true
     rootDir: server
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
